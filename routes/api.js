@@ -23,12 +23,13 @@ module.exports = function (app) {
     const conflict = [];
     const row = solver.getRowNumber(coordinate[0]);
     const column = solver.getColumnNumber(coordinate[1]);
+    const board = solver.transformToBoard(puzzleString);
 
-    if (!solver.checkColPlacement(puzzleString, row, column, value))
+    if (!solver.checkColPlacement(board, row, column, value))
       conflict.push("column");
-    if (!solver.checkRowPlacement(puzzleString, row, column, value))
+    if (!solver.checkRowPlacement(board, row, column, value))
       conflict.push("row");
-    if (!solver.checkRegionPlacement(puzzleString, row, column, value))
+    if (!solver.checkRegionPlacement(board, row, column, value))
       conflict.push("region");
 
     if (conflict.length) return res.json({ valid: false, conflict });

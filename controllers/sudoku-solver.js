@@ -21,6 +21,41 @@ class SudokuSolver {
     return isValid;
   }
 
+  checkRowPlacement(board, row, column, value) {
+    if (board[row][column] === String(value)) return true;
+    return !board[row].includes(value);
+  }
+
+  checkColPlacement(board, row, column, value) {
+    if (board[row][column] === String(value)) return true;
+    return !board.some((rowString) => rowString[column] === value);
+  }
+
+  checkRegionPlacement(board, row, column, value) {
+    if (board[row][column] === String(value)) return true;
+
+    const startRegionRow = Math.floor(row / 3) * 3;
+    const startRegionColumn = Math.floor(column / 3) * 3;
+
+    for (let i = startRegionRow; i < startRegionRow + 3; i++) {
+      for (let j = startRegionColumn; j < startRegionColumn + 3; j++) {
+        if (board[i][j] === value) return false;
+      }
+    }
+
+    return true;
+  }
+
+  solve(puzzleString) {
+    const board = this.transformToBoard(puzzleString);
+
+    if (this.fillInNumbers(board, 0, 0)) {
+      return board.flat().join("");
+    }
+
+    return "";
+  }
+
   getRowNumber(rowCharacter) {
     const characters = ["a", "b", "c", "d", "e", "f", "g", "h", "i"];
     return characters.findIndex(
@@ -32,130 +67,53 @@ class SudokuSolver {
     return +column - 1;
   }
 
-  getPuzzleArray(puzzleString) {
-    return puzzleString.match(/.{9}/g);
-  }
+  transformToBoard(puzzleString) {
+    const sudokuSize = 9;
+    const board = [];
+    const puzzleArr = puzzleString.split("");
 
-  checkRowPlacement(puzzleString, row, column, value) {
-    const puzzle = this.getPuzzleArray(puzzleString);
-
-    return !(puzzle[row].includes(value) && puzzle[row][column] != value);
-  }
-
-  checkColPlacement(puzzleString, row, column, value) {
-    const puzzle = this.getPuzzleArray(puzzleString);
-
-    return !puzzle.some(
-      (rowString, index) => rowString[column] == value && index !== row
-    );
-  }
-
-  checkRegionPlacement(puzzleString, row, column, value) {
-    const startRegionRow = Math.floor(row / 3) * 3;
-    const startRegionColumn = Math.floor(column / 3) * 3;
-
-    const puzzle = this.getPuzzleArray(puzzleString);
-
-    for (let i = startRegionRow; i < startRegionRow + 3; i++) {
-      for (let j = startRegionColumn; j < startRegionColumn + 3; j++) {
-        if (puzzle[i][j] == value && i !== row && j !== column) return false;
-      }
-    }
-    return true;
-  }
-
-  transposeToColumn(puzzle) {
-    let newPuzzle = [];
-
-    for (let i = 0; i < puzzle.length; i++) {
-      for (let j = 0; j < puzzle[i].length; j++) {
-        if (!newPuzzle[j]) newPuzzle[j] = "";
-
-        newPuzzle[j] += puzzle[i][j];
-      }
+    for (let i = 0; i < sudokuSize; i++) {
+      board.push(puzzleArr.slice(sudokuSize * i, (i + 1) * sudokuSize));
     }
 
-    return newPuzzle;
+    return board;
   }
 
-  transposeToRegion(puzzle) {
-    let newPuzzle = [];
-
-    for (let i = 0; i < puzzle.length; i++) {
-      newPuzzle[i] = "";
-      for (let j = 0; j < puzzle[i].length; j++) {
-        const index = Math.floor(i / 3) * 3 + Math.floor(j / 3);
-        newPuzzle[index] += puzzle[i][j];
-      }
+  fillInNumbers(board, row, column) {
+    if (row === 8 && column === 9) {
+      return true;
     }
 
-    return newPuzzle;
-  }
+    if (column === 9) {
+      row += 1;
+      column = 0;
+    }
 
-  checkValidPuzzle(puzzle) {
-    const regex = /(\d).*\1/g;
+    if (board[row][column] !== ".") {
+      return this.fillInNumbers(board, row, column + 1);
+    }
 
-    const isValidRow = !puzzle.some((row) => regex.test(row));
+    for (let value = 1; value <= 9; value++) {
+      if (this.isSafe(board, row, column, String(value))) {
+        board[row][column] = String(value);
 
-    const columnPuzzle = this.transposeToColumn(puzzle);
-    const isValidColumn = !columnPuzzle.some((row) => regex.test(row));
-
-    const regionPuzzle = this.transposeToRegion(puzzle);
-    const isValidRegion = !regionPuzzle.some((row) => regex.test(row));
-
-    return isValidRow && isValidColumn && isValidRegion;
-  }
-
-  solve(puzzleString) {
-    let solution = "";
-
-    const puzzle = this.getPuzzleArray(puzzleString);
-
-    if (!this.checkValidPuzzle(puzzle)) return "";
-
-    for (let i = 0; i < 9; i++) {
-      for (let j = 0; j < 9; j++) {
-        let matched = "";
-
-        if (puzzle[i][j] === ".") {
-          for (let value = 1; value <= 9; value++) {
-            const isValidColPlacement = this.checkColPlacement(
-              puzzleString,
-              i,
-              j,
-              value
-            );
-            const isValidRowPlacement = this.checkRowPlacement(
-              puzzleString,
-              i,
-              j,
-              value
-            );
-            const isValidRegionPlacement = this.checkRegionPlacement(
-              puzzleString,
-              i,
-              j,
-              value
-            );
-
-            if (
-              isValidColPlacement &&
-              isValidRowPlacement &&
-              isValidRegionPlacement
-            ) {
-              matched = `${value}`;
-              break;
-            }
-          }
-
-          if (!matched) return "";
+        if (this.fillInNumbers(board, row, column + 1)) {
+          return true;
         }
-
-        solution += matched || puzzle[i][j];
       }
+
+      board[row][column] = ".";
     }
 
-    return solution.length === 81 ? solution : "";
+    return false;
+  }
+
+  isSafe(board, i, j, value) {
+    const isRegionPlaceable = this.checkRegionPlacement(board, i, j, value);
+    const isColPlacementValid = this.checkColPlacement(board, i, j, value);
+    const isRowPlacementValid = this.checkRowPlacement(board, i, j, value);
+
+    return isRegionPlaceable && isColPlacementValid && isRowPlacementValid;
   }
 }
 

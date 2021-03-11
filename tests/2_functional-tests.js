@@ -38,8 +38,8 @@ suite("Functional Tests", () => {
           assert.isObject(res.body, "response should be an object");
           assert.deepEqual(
             res.body,
-            { error: "Required field missing" },
-            "response should return Required field missing"
+            { error: "Required field(s) missing" },
+            "response should return Required field(s) missing"
           );
           done();
         });
@@ -246,8 +246,8 @@ suite("Functional Tests", () => {
           assert.isObject(res.body, "response should be an object");
           assert.deepEqual(
             res.body,
-            { error: "Required field missing" },
-            "response should return Required field missing"
+            { error: "Required field(s) missing" },
+            "response should return Required field(s) missing"
           );
           done();
         });

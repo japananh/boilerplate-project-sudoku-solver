@@ -39,7 +39,7 @@ module.exports = function (app) {
   app.route("/api/solve").post((req, res) => {
     const puzzleString = req.body.puzzle;
 
-    if (!puzzleString) return res.json({ error: "Required field(s) missing" });
+    if (!puzzleString) return res.json({ error: "Required field missing" });
 
     if (!solver.validateLength(puzzleString))
       return res.json({ error: "Expected puzzle to be 81 characters long" });
